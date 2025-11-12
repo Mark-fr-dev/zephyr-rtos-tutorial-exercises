@@ -32,6 +32,19 @@
 #error "Unsupported board: led1 devicetree alias is not defined"
 #endif
 
+// struct printk_data_t
+// {
+//     void *fifo_reserved; /* 1st word reserved for use by fifo */
+//     uint32_t led;
+//     uint32_t cnt;
+// };
+
+// #define PRINTK_DATA_SIZE sizeof(struct printk_data_t)
+// K_FIFO_DEFINE_STATIC(printk_fifo); // 8 slots, auto-sized // 8 slots
+// // K_FIFO_DEFINE_STATIC(printk_fifo);
+// //K_FIFO_DEFINE(printk_fifo);
+
+/* 1. Struct */
 struct printk_data_t
 {
     void *fifo_reserved; /* 1st word reserved for use by fifo */
@@ -39,9 +52,8 @@ struct printk_data_t
     uint32_t cnt;
 };
 
-#define PRINTK_DATA_SIZE sizeof(struct printk_data_t)
-K_FIFO_DEFINE_STATIC(printk_fifo, PRINTK_DATA_SIZE, 8); // 8 slots
-// K_FIFO_DEFINE_STATIC(printk_fifo);
+/* 2. Static FIFO — NO size macro needed */
+K_FIFO_DEFINE(printk_fifo); // 8 slots, auto-sized
 
 struct led
 {
