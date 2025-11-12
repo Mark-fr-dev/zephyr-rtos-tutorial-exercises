@@ -13,6 +13,8 @@
 #include <zephyr/sys/mem_manage.h>
 #include <string.h>
 
+
+
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
 
@@ -37,7 +39,9 @@ struct printk_data_t
     uint32_t cnt;
 };
 
-K_FIFO_DEFINE(printk_fifo);
+#define PRINTK_DATA_SIZE sizeof(struct printk_data_t)
+K_FIFO_DEFINE_STATIC(printk_fifo, PRINTK_DATA_SIZE, 8); // 8 slots
+// K_FIFO_DEFINE_STATIC(printk_fifo);
 
 struct led
 {
@@ -82,12 +86,14 @@ void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
         struct printk_data_t tx_data = {.led = id, .cnt = cnt};
 
         size_t size = sizeof(struct printk_data_t);
-        char *mem_ptr = k_malloc(size);
-        __ASSERT_NO_MSG(mem_ptr != 0);
+        //char *mem_ptr = k_malloc(size);
+        //__ASSERT_NO_MSG(mem_ptr != 0);
 
-        memcpy(mem_ptr, &tx_data, size);
+        //memcpy(mem_ptr, &tx_data, size);
 
-        k_fifo_put(&printk_fifo, mem_ptr);
+        //k_fifo_put(&printk_fifo, mem_ptr);
+
+        k_fifo_put(&printk_fifo, &tx_data);
 
         k_msleep(sleep_ms);
         cnt++;
@@ -108,11 +114,20 @@ void uart_out(void)
 {
     while (1)
     {
+        struct printk_data_t data;
         struct printk_data_t *rx_data = k_fifo_get(&printk_fifo,
                                                    K_FOREVER);
-        printk("Toggled led%d; counter=%d\n",
-               rx_data->led, rx_data->cnt);
-        k_free(rx_data);
+        if (rx_data)
+        {
+            memcpy(&data, rx_data, sizeof(data));
+            printk("Toggled led%d; counter=%d\n", data.led, data.cnt);
+        }
+
+                                                   //printk("Toggled led%d; counter=%d\n",
+        //       rx_data->led, rx_data->cnt);
+       // k_free(rx_data);
+
+
     }
 }
 
