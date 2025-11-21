@@ -10,8 +10,8 @@
 
 /* scheduling priority used by each thread */
 #define A_PRIORITY 0
-#define B_PRIORITY -1
-#define C_PRIORITY -2
+#define B_PRIORITY 0
+#define C_PRIORITY 0
 
 #define LOOPS 3
 
@@ -52,7 +52,7 @@ void threadB(void *arg1, void *arg2, void *arg3)
 
     for (int i = 0; i < LOOPS; i++) {
         printk("Thread B: Thread B (iteration %d)\n", i + 1);
-        k_yield();  
+      //  k_yield();  
     }
     printk("Thread B: completed all iterations, aborted.\n");
     k_thread_abort(&threadB_data);
@@ -66,7 +66,7 @@ void threadC(void *arg1, void *arg2, void *arg3)
 
     for (int i = 0; i < LOOPS; i++) {
         printk("Thread C: Thread C (iteration %d)\n", i + 1);
-        k_yield();  
+     //  k_yield();  
     }
     printk("Thread C: completed all iterations, aborted.\n");
     k_thread_abort(&threadC_data);
