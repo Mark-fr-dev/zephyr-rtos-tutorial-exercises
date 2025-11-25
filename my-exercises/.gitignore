@@ -1,0 +1,14 @@
+cat > .gitignore << 'EOF'
+# Zephyr build directories
+build/
+.zephyr/
+.west/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs & temp
+*.log
+*.tmp
+EOF
