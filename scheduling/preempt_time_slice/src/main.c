@@ -35,7 +35,7 @@ void threadA(void *arg1, void *arg2, void *arg3)
 
     for (int i = 0; i < LOOPS; i++) {
         printk("Thread A: Thread A (iteration %d)\n", i + 1);
-    
+
     }
     printk("Thread A: completed all iterations, aborted.\n");
     k_thread_abort(&threadA_data);
