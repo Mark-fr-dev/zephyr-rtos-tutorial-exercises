@@ -30,15 +30,15 @@ void threadA(void *arg1, void *arg2, void *arg3)
 {
     ARG_UNUSED(arg1); ARG_UNUSED(arg2); ARG_UNUSED(arg3);
     printk("Thread A: Thread A started.\n");
-    k_thread_start(&threadB_data);
+   
     printk("Thread A: Thread B started by Thread A.\n");
 
-    for (int i = 0; i < LOOPS; i++) {
-        printk("Thread A: Thread A (iteration %d)\n", i + 1);
-
+    while (1)
+    {
+        /* code */
+        printk("Thread A: Thread A loop \n");
     }
-    printk("Thread A: completed all iterations, aborted.\n");
-    k_thread_abort(&threadA_data);
+    
 
 }
 
@@ -47,15 +47,13 @@ void threadB(void *arg1, void *arg2, void *arg3)
     ARG_UNUSED(arg1); ARG_UNUSED(arg2); ARG_UNUSED(arg3);
 
     printk("Thread B: Thread B started.\n");
-    k_thread_start(&threadC_data);
-    printk("Thread B: Thread C started by Thread B.\n");
-
-    for (int i = 0; i < LOOPS; i++) {
-        printk("Thread B: Thread B (iteration %d)\n", i + 1);
-      //  k_yield();  
+    
+    while(1)
+    {
+        /* code */
+        printk("Thread B: Thread B loop \n");
     }
-    printk("Thread B: completed all iterations, aborted.\n");
-    k_thread_abort(&threadB_data);
+
 }
 
 void threadC(void *arg1, void *arg2, void *arg3)
@@ -64,12 +62,12 @@ void threadC(void *arg1, void *arg2, void *arg3)
 
     printk("Thread C: Thread C started.\n");
 
-    for (int i = 0; i < LOOPS; i++) {
-        printk("Thread C: Thread C (iteration %d)\n", i + 1);
-     //  k_yield();  
+    while (1)   
+    {
+        /* code */
+        printk("Thread C: Thread C loop \n");
     }
-    printk("Thread C: completed all iterations, aborted.\n");
-    k_thread_abort(&threadC_data);
+    
 }
 
 void main(void)
@@ -92,8 +90,9 @@ void main(void)
     k_thread_name_set(&threadC_data, "thread_c");
     
     k_thread_start(&threadA_data);
-    
-    
+    k_thread_start(&threadB_data);
+    k_thread_start(&threadC_data);
+        
     // // Optional: keep main thread alive
     // while (1)
     // {
