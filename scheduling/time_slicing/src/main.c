@@ -1,5 +1,5 @@
 /* zephyr-rtos-tutorial - SCHEDULING 
-    EXERCISE - Pre-emptive time slicing*/
+    EXERCISE - simple time slicing*/
 
 
 #include <zephyr/kernel.h>
