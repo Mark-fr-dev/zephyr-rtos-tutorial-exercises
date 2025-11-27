@@ -9,9 +9,9 @@ EXERCISE - simple time slicing*/
 #define STACKSIZE 1024
 
 /* scheduling priority used by each thread */
-#define A_PRIORITY 0
-#define B_PRIORITY 0
-#define C_PRIORITY 0
+#define A_PRIORITY 1
+#define B_PRIORITY 1
+#define C_PRIORITY 1
 
 #define LOOPS 3
 
@@ -25,6 +25,8 @@ static struct k_thread threadB_data;
 
 K_THREAD_STACK_DEFINE(stack_C, STACKSIZE);
 static struct k_thread threadC_data;
+
+volatile int live_watch_test = 0;
 
 void threadA(void *arg1, void *arg2, void *arg3)
 {
@@ -66,6 +68,8 @@ void threadC(void *arg1, void *arg2, void *arg3)
     {
         /* code */
         printk("Thread C: Thread C loop \n");
+        live_watch_test++;
+        k_sleep(K_MSEC(100));
     }
     
 }
