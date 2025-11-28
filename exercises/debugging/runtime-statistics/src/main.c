@@ -7,11 +7,13 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 
+#include <debug/thread_analyzer.h>
+
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
 
-#define PRIORITY_THREAD_1	(3)
-#define PRIORITY_THREAD_2	(2)
+#define PRIORITY_THREAD_1	(1)
+#define PRIORITY_THREAD_2	(1)
 #define PRIORITY_THREAD_3 	(1)
 
 
@@ -30,20 +32,12 @@ void thread_1(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
-	int i = 0;
-
 	printk("thread_1: thread started \n");
-	k_thread_start(&thread_2_data);
+	
 
 	while (1)
 	{
-		i++;
-		printk("thread_1: thread loop %d\n", i);
-		if (i == 3)
-		{
-			printk("thread_1: thread abort\n");
-			k_thread_abort(&thread_1_data);
-		}
+		printk("thread_1: thread loop \n");
 	}
 
 }
@@ -54,20 +48,11 @@ void thread_2(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
-	int i = 0;
-
 	printk("thread_2: thread started \n");
-	k_thread_start(&thread_3_data);
 
 	while (1)
 	{
-		i++;
-		printk("thread_2: thread loop %d\n", i);
-		if (i == 3)
-		{
-			printk("thread_2: thread abort\n");
-			k_thread_abort(&thread_2_data);
-		}
+		printk("thread_2: thread loop \n");
 	}
 
 }
@@ -78,19 +63,12 @@ void thread_3(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
-	int i = 0;
-
 	printk("thread_3: thread started \n");
 
 	while (1)
 	{
-		i++;
-		printk("thread_3: thread loop %d\n", i);
-		if (i == 3)
-		{
-			printk("thread_3: thread abort\n");
-			k_thread_abort(&thread_3_data);
-		}
+		printk("thread_3: thread loop \n");
+		thread_analyzer_print();
 	}
 
 }
@@ -116,4 +94,6 @@ void main(void)
 	k_thread_name_set(&thread_3_data, "thread_3");
 
 	k_thread_start(&thread_1_data);
+	k_thread_start(&thread_2_data);
+	k_thread_start(&thread_3_data);
 }
