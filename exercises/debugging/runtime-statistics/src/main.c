@@ -51,8 +51,7 @@ void thread_2(void *dummy1, void *dummy2, void *dummy3)
 	printk("thread_2: thread started \n");
 
 	while (1)
-	{
-		printk("thread_2: thread loop \n");
+	{		printk("thread_2: thread loop \n");
 	}
 
 }
@@ -68,7 +67,7 @@ void thread_3(void *dummy1, void *dummy2, void *dummy3)
 	while (1)
 	{
 		printk("thread_3: thread loop \n");
-		thread_analyzer_print();
+		thread_analyzer_print(0);
 	}
 
 }
