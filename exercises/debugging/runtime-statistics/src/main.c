@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
-#include <debug/thread_analyzer.h>
+#include <zephyr/debug/thread_analyzer.h>
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
