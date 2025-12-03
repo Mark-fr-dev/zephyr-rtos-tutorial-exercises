@@ -30,21 +30,21 @@ static struct gpio_callback button_cb_data;
 
 /* This function runs when the button interrupt fires */
 /* Your direct ISR — note the special signature for GPIO callbacks */
-ISR_DIRECT_DECLARE(button_isr)
-{
-    gpio_pin_interrupt_configure_dt(&button, GPIO_INT_DISABLE);
+// ISR_DIRECT_DECLARE(button_isr)
+// {
+//     gpio_pin_interrupt_configure_dt(&button, GPIO_INT_DISABLE);
 
-    printk("Button pressed! (from direct ISR)\n");
+//     printk("Button pressed! (from direct ISR)\n");
 
-    /* This tells threadA: "stop looping now" */
-    k_sem_give(&button_pressed_sem);
+//     /* This tells threadA: "stop looping now" */
+//     k_sem_give(&button_pressed_sem);
 
-    /* Re-arm interrupt for next press */
-    gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_FALLING);
+//     /* Re-arm interrupt for next press */
+//     gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_FALLING);
 
-    ISR_DIRECT_PM();
-    return 1;
-}
+//     ISR_DIRECT_PM();
+//     return 1;
+// }
 
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
                     uint32_t pins)
