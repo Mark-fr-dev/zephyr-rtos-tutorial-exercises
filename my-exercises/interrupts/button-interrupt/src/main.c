@@ -51,6 +51,7 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb,
 {
     printk("Button pressed!\n");
     k_sem_give(&button_pressed_sem);
+    return;
 }
 
 void button_setup(void)
@@ -84,7 +85,9 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
         if (k_sem_take(&button_pressed_sem, K_NO_WAIT) == 0)
         {
             printk("thread_a: BUTTON DETECTED! Stopping loop.\n");
-            break; // ← exits the loop → thread ends or can continue
+            i = 0; // reset counter
+            k_msleep(100);
+            //break; // ← exits the loop → thread ends or can continue
         }
 
         k_msleep(SLEEPTIME);
