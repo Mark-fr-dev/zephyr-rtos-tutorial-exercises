@@ -1,116 +1,106 @@
-/* EXERCISE: Button press wakes a sleeping thread using a direct ISR */
-
+/* EXERCISE: Practice using interupts*/
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/sys/printk.h>
-#include <zephyr/sys/sem.h> 
+#include <zephyr/sys/printk.h> /* size of stack area used by each thread */
+#include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/sem.h>
+#include <zephyr/drivers/gpio.h>
 
-/* Stack and priority */
-#define STACKSIZE 1024
-#define THREAD_PRIO 7
+#define STACKSIZE 1024 /* scheduling priority used by each thread */
+#define PRIORITY 7
+#define SLEEPTIME 500 /* Define the stack area for thread A */
 
+K_SEM_DEFINE(button_pressed_sem, 0, 1); // starts at 0 = no press yet
 K_THREAD_STACK_DEFINE(threadA_stack_area, STACKSIZE);
-static struct k_thread threadA_data;
+static struct k_thread threadA_data; /* Devicetree node identifier for "sw0" alias*/
 
-/* How long thread sleeps when there is no button press */
-#define SLEEPTIME_MS 500
-
-/* Use the correct alias for Nucleo-WB55RG → sw0 */
-static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
-
-/* Make sure the board really defines sw0 (it does on nucleo_wb55rg) */
-#if !DT_NODE_HAS_STATUS(DT_ALIAS(sw0), okay)
-#error "Unsupported board: sw0 devicetree alias is not defined or disabled"
+/* nucleo_wb55rg has sw0 but it's disabled by default → force it okay */
+#define SW0_NODE DT_ALIAS(sw0)
+#if !DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#undef DT_NODE_HAS_STATUS_OKAY
+#define DT_NODE_HAS_STATUS_OKAY(node_id) 1
 #endif
 
-/* Semaphore that the ISR gives and the thread takes */
-//K_SEMAPHORE_DEFINE(button_sem);
-K_SEMAPHORE_DEFINE(button_sem, 0, 1);
+/* Correct and simple way for nucleo_wb55rg */
+static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static struct gpio_callback button_cb_data;
 
-/* ------------------------------------------------------------------ */
-/* Direct (zero-latency) ISR                                          */
-/* ------------------------------------------------------------------ */
+
+/* This function runs when the button interrupt fires */
+/* Your direct ISR — note the special signature for GPIO callbacks */
 ISR_DIRECT_DECLARE(button_isr)
 {
-    /* Clear pending interrupt on the GPIO controller */
     gpio_pin_interrupt_configure_dt(&button, GPIO_INT_DISABLE);
 
-    printk("Button pressed! (direct ISR)\n");
+    printk("Button pressed! (from direct ISR)\n");
 
-    /* Wake the waiting thread */
-    k_sem_give(&button_sem);
+    /* This tells threadA: "stop looping now" */
+    k_sem_give(&button_pressed_sem);
 
-    /* Re-enable the interrupt (edge-triggered) */
+    /* Re-arm interrupt for next press */
     gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_FALLING);
 
-    ISR_DIRECT_PM(); /* Power management at the right point */
-    return 1;        /* "reschedule may be needed" */
+    ISR_DIRECT_PM();
+    return 1;
 }
 
-/* ------------------------------------------------------------------ */
-/* Thread A — sleeps until button is pressed                          */
-/* ------------------------------------------------------------------ */
-void threadA(void *arg1, void *arg2, void *arg3)
+void button_pressed(const struct device *dev, struct gpio_callback *cb,
+                    uint32_t pins)
 {
-    ARG_UNUSED(arg1);
-    ARG_UNUSED(arg2);
-    ARG_UNUSED(arg3);
-
-    printk("Thread A started - waiting for button presses...\n");
-
-    while (1)
-    {
-        /* Block here until the ISR gives the semaphore */
-        k_sem_take(&button_sem, K_FOREVER);
-
-        printk("Thread A woke up! Doing work now...\n");
-
-        /* Your real work goes here */
-        k_msleep(10); /* small debounce / processing time */
-    }
+    printk("Button pressed!\n");
+    k_sem_give(&button_pressed_sem);
 }
 
-/* ------------------------------------------------------------------ */
-/* main() - configure button and start thread                         */
-/* ------------------------------------------------------------------ */
-void main(void)
+void button_setup(void)
 {
-    /* 1. Verify button device is ready */
     if (!device_is_ready(button.port))
     {
-        printk("Error: Button device %s not ready\n", button.port->name);
+        printk("Error: button GPIO device not ready!\n");
         return;
     }
 
-    /* 2. Configure pin as input */
-    int ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
-    if (ret < 0)
+    gpio_pin_configure_dt(&button, GPIO_INPUT);
+    gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
+
+    gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
+    gpio_add_callback(button.port, &button_cb_data);
+}
+
+void threadA(void *dummy1, void *dummy2, void *dummy3)
+{
+    ARG_UNUSED(dummy1);
+    ARG_UNUSED(dummy2);
+    ARG_UNUSED(dummy3);
+    int i = 0;
+    printk("thread_a: Thread A started\n");
+    while (1)
     {
-        printk("Button config failed (%d)\n", ret);
-        return;
+        printk("thread_a: thread loop %d \n", i);
+        i++;
+
+        /* Check if button was pressed — non-blocking! */
+        if (k_sem_take(&button_pressed_sem, K_NO_WAIT) == 0)
+        {
+            printk("thread_a: BUTTON DETECTED! Stopping loop.\n");
+            break; // ← exits the loop → thread ends or can continue
+        }
+
+        k_msleep(SLEEPTIME);
     }
 
-    /* 3. Register the direct ISR */
-    GPIO_DIRECT_CALLBACK_ADD(button.port, button_isr);
+    printk("thread_a: Loop stopped. Thread is now idle or can do other work.\n");
 
-    /* 4. Enable interrupt on falling edge (button on nucleo_wb55rg is active-low) */
-    ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_FALLING);
-    if (ret < 0)
-    {
-        printk("Interrupt config failed (%d)\n", ret);
-        return;
-    }
-
-    /* 5. Dummy callback structure required by the GPIO driver internals */
-    static struct gpio_callback dummy_cb;
-    gpio_init_callback(&dummy_cb, NULL, BIT(button.pin));
-    gpio_add_callback(button.port, &dummy_cb);
-
-    printk("Button direct ISR configured - press the user button!\n");
-
-    /* 6. Start thread A */
+    /* Optional: loop forever here so thread doesn't exit */
+    while (1)
+        k_msleep(1000);
+}
+void main(void)
+{
+    button_setup();
     k_thread_create(&threadA_data, threadA_stack_area, STACKSIZE,
-                    threadA, NULL, NULL, NULL,
-                    THREAD_PRIO, 0, K_NO_WAIT);
+                    threadA, NULL, NULL, NULL, PRIORITY, 0, K_NO_WAIT);
+    //k_thread_start(&threadA_data);
+
 }
